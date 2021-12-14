@@ -9,15 +9,15 @@ const server = http.createServer(app);
 
 const db = mysql.createConnection({
     host: 'localhost',
-    user: 'root',
-    password: 'pass',
-    database: 'dbname'
+    user: 'LODA_LAKSHMI',
+    password: 'LODA',
+    database: 'lakshmiloom'
 })
 
-// db.connect((err) => {
-//     if (err) console.log(err)
-//     else console.log("Connected To DB")
-// })
+db.connect((err) => {
+    if (err) console.log(err)
+    else console.log("Connected To DB")
+})
 
 let connections = [] //all connection to the websockets are stored in this array
 
@@ -165,6 +165,19 @@ const getDataFromSql = () => {
         }
     })
 }
+
+// SELECT t1.mcno as name,t1.rtime as current_run_time,t2.current_stop_time
+// from curprod as t1 INNER JOIN
+// (SELECT id,mcno as name, max(sstime+lstime) as current_stop_time FROM curprod GROUP BY mnco) as t2
+// ON t1.id=t2.id and t1.name=t2.name  //Subquery 1
+
+// SELECT t1.mcno as name,t1.scode as error_code,t2.duration
+// from curstop as t1 INNER JOIN
+// (SELECT id,mcno as name, max duration FROM curstp GROUP BY mnco) as t2
+// ON t1.id=t2.id and t1.name=t2.name //Subquery 2
+
+
+// 
 
 // id
 // SDate
