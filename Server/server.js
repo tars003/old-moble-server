@@ -91,7 +91,7 @@ const updateMachineData = async(obj) => {
             if (timeDiff >= API_CALL_TIME) {
                 //this means machine is down for more than 5 minutes
                 //we need to send a notification to app using websockets
-                sendNotificationForMachine(latestMachineData[idx], 'down') //send notification to app
+                sendNotificationForMachine(obj.latestMachineData[idx], 'down') //send notification to app
                 obj.latestMachineData[idx].status = "Down"
                 obj.downMachines[machineData.id] = machineData.id
             } else {
