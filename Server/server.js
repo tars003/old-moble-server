@@ -14,10 +14,10 @@ const db = mysql.createConnection({
     database: 'dbname'
 })
 
-db.connect((err) => {
-    if (err) console.log(err)
-    else console.log("Connected To DB")
-})
+// db.connect((err) => {
+//     if (err) console.log(err)
+//     else console.log("Connected To DB")
+// })
 
 let connections = [] //all connection to the websockets are stored in this array
 
@@ -71,48 +71,48 @@ let currentMachineDataApi = []
 let downMachinesApi = {}
 let currentMachineDataSql = []
 let downMachinesSql = {}
-    // const API_CALL_TIME = 10000 //in milliseconds
-const API_CALL_TIME = 150000 //in milliseconds
+    const API_CALL_TIME = 10000 //in milliseconds
+// const API_CALL_TIME = 150000 //in milliseconds
 
-const updateMachineData = async(currentMachineData, downMachines, latestMachineData) => {
-
-    if (currentMachineData.length === 0) {
-        latestMachineData.forEach(machineData => {
+const updateMachineData = async(obj) => {    
+    
+    if (obj.currentMachineData.length === 0) {
+        obj.latestMachineData.forEach(machineData => {
             machineData.timestamp = convertDateTimeStringToTime(machineData.timestamp)
         })
-        currentMachineData = latestMachineData
+        obj.currentMachineData = obj.latestMachineData
     } else {
         //looping through currently stored machine and comparing it with
         //incoming new data to check if a machine is working or ideal
-        currentMachineData.forEach((machineData, idx) => {
-            const timeDiff = parseInt(latestMachineData[idx].current_stop_time) - parseInt(machineData.current_stop_time)
-            console.log(timeDiff, latestMachineData[idx].current_stop_time, machineData.current_stop_time)
-            latestMachineData[idx].timestamp = convertDateTimeStringToTime(latestMachineData[idx].timestamp)
+        obj.currentMachineData.forEach((machineData, idx) => {
+            const timeDiff = parseInt(obj.latestMachineData[idx].current_stop_time) - parseInt(machineData.current_stop_time)
+            console.log(timeDiff, obj.latestMachineData[idx].current_stop_time, machineData.current_stop_time)
+            obj.latestMachineData[idx].timestamp = convertDateTimeStringToTime(obj.latestMachineData[idx].timestamp)
             if (timeDiff >= API_CALL_TIME) {
                 //this means machine is down for more than 5 minutes
                 //we need to send a notification to app using websockets
                 sendNotificationForMachine(latestMachineData[idx], 'down') //send notification to app
-                latestMachineData[idx].status = "Down"
-                downMachines[machineData.id] = machineData.id
+                obj.latestMachineData[idx].status = "Down"
+                obj.downMachines[machineData.id] = machineData.id
             } else {
                 //it means our machine is active for last 5 minutes
                 //we have to check if machine's down notification was send
                 //our app. If yes then we have to send active notification
-                if (downMachines[machineData.id]) {
-                    sendNotificationForMachine(latestMachineData[idx], 'functional') //send notification to app
-                    downMachines[machineData.id] = null
+                if (obj.downMachines[machineData.id]) {
+                    sendNotificationForMachine(obj.latestMachineData[idx], 'functional') //send notification to app
+                    obj.downMachines[machineData.id] = null
                 }
-                latestMachineData[idx].status = "Functional"
+                obj.latestMachineData[idx].status = "Functional"
             }
         })
-        currentMachineData = latestMachineData //finally upating machine data with latest data set
+        obj.currentMachineData = obj.latestMachineData //finally upating machine data with latest data set
     }
 }
 
 //calling the updatedata funciton for dataset
 setInterval(() => {
     getDataFromApi()
-    getDataFromSql()
+        // getDataFromSql()
 }, API_CALL_TIME)
 
 
@@ -121,6 +121,7 @@ app.get('/data', (req, res) => {
     currentMachineDataSql.forEach(machineData => {
         temp.push(machineData)
     })
+    console.log(currentMachineDataApi)
     res.status(200).json({
         message: 'Machine Data Fetched Successfully',
         data: temp
@@ -144,7 +145,12 @@ const getDataFromApi = async() => {
     const data = await res.json()
     const latestMachineData = data.data
 
-    updateMachineData(currentMachineDataApi, downMachinesApi, latestMachineData)
+    const obj = {
+        currentMachineData:currentMachineDataApi,
+        downMachines:downMachinesApi,
+        latestMachineData:latestMachineData
+    }
+    updateMachineData(obj)
 }
 
 //db query
