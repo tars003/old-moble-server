@@ -10,8 +10,8 @@ const server = http.createServer(app);
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'flashisarun',
-    database: 'moviepedia'
+    password: 'pass',
+    database: 'dbname'
 })
 
 db.connect((err) => {
@@ -74,8 +74,8 @@ let downMachinesSql = {}
     // const API_CALL_TIME = 10000 //in milliseconds
 const API_CALL_TIME = 150000 //in milliseconds
 
-const updateMachineData = async(currentMachineData,downMachines,latestMachineData) => {
-    
+const updateMachineData = async(currentMachineData, downMachines, latestMachineData) => {
+
     if (currentMachineData.length === 0) {
         latestMachineData.forEach(machineData => {
             machineData.timestamp = convertDateTimeStringToTime(machineData.timestamp)
@@ -110,7 +110,7 @@ const updateMachineData = async(currentMachineData,downMachines,latestMachineDat
 }
 
 //calling the updatedata funciton for dataset
-setInterval(()=>{
+setInterval(() => {
     getDataFromApi()
     getDataFromSql()
 }, API_CALL_TIME)
@@ -135,7 +135,7 @@ server.listen(5000, (err) => {
     }
 })
 
-const getDataFromApi = async () => {
+const getDataFromApi = async() => {
     //fetching data from API
     //for test purpose we have a local server running at port 1000
     //that will send all data related to machine
@@ -144,7 +144,7 @@ const getDataFromApi = async () => {
     const data = await res.json()
     const latestMachineData = data.data
 
-    updateMachineData(currentMachineDataApi,downMachinesApi,latestMachineData)
+    updateMachineData(currentMachineDataApi, downMachinesApi, latestMachineData)
 }
 
 //db query
@@ -153,9 +153,8 @@ const getDataFromSql = () => {
         if (err) {
             console.log(err)
             reject('Failed')
-        } 
-        else{
-            updateMachineData(currentMachineDataSql,downMachinesSql,latestMachineData)
+        } else {
+            updateMachineData(currentMachineDataSql, downMachinesSql, latestMachineData)
         }
     })
 }
