@@ -121,7 +121,6 @@ app.get('/data', (req, res) => {
     currentMachineDataSql.forEach(machineData => {
         temp.push(machineData)
     })
-    console.log(currentMachineDataApi)
     res.status(200).json({
         message: 'Machine Data Fetched Successfully',
         data: temp
@@ -150,7 +149,9 @@ const getDataFromApi = async() => {
         downMachines:downMachinesApi,
         latestMachineData:latestMachineData
     }
-    updateMachineData(obj)
+    await updateMachineData(obj)
+    currentMachineDataApi = obj.currentMachineData
+    downMachinesApi = obj.downMachines
 }
 
 //db query
