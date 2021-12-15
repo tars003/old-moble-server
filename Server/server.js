@@ -112,14 +112,20 @@ const updateMachineData = async(obj) => {
 //calling the updatedata funciton for dataset
 setInterval(() => {
     getDataFromApi()
-        // getDataFromSql()
+    getDataFromSql()
 }, API_CALL_TIME)
 
 
 app.get('/data', (req, res) => {
     let temp = currentMachineDataApi
     currentMachineDataSql.forEach(machineData => {
-        temp.push(machineData)
+        let flag = true
+        currentMachineDataApi.forEach(data => {
+            if(data.id === machineData.id) {
+                flag = false
+            }
+        })
+        if(flag)temp.push(machineData)
     })
     res.status(200).json({
         message: 'Machine Data Fetched Successfully',
@@ -156,18 +162,22 @@ const getDataFromApi = async() => {
 
 //db query
 const getDataFromSql = async() => {
-    db.query(`SELECT ${primarykey} from ${table} ')`, async(err, result) => {
+    db.query(`SELECT t1.mcno as id,t1.rtime as current_run_time,(t1.sstime+t1.lstime) as current_stop_time,t2.scode as error_code, t2.duration as stop_time FROM curpord as t1 INNER JOIN curstop as t2 ON t1.mcno = t2.mcno`, async(err, result) => {
         if (err) {
             console.log(err)
             reject('Failed')
         } else {
+            let latestMachineData = []
 
             const timeStamp = new Date(Date.now()).toISOString()
             result.forEach(data => {
+                data = JSON.stringify(data)
+                data.name = `Machine-${data.id}`
+                data.rpm = '200'
                 data.timeStamp = timeStamp
                 data.efficiency = (Math.round((data.current_run_time / (data.current_run_time+data.current_stop_time))*10000))/100
+                latestMachineData.push(data)
             })
-            const latestMachineData = result
             const obj = {
                 currentMachineData:currentMachineDataSql,
                 downMachines:downMachinesSql,
@@ -189,6 +199,8 @@ const getDataFromSql = async() => {
 // from curstop as t1 INNER JOIN
 // (SELECT id,mcno as name, max(duration) FROM curstp GROUP BY mnco) as t2
 // ON t1.duration=t2.duration and t1.name=t2.name //Subquery 2
+
+//SELECT t1.mcno as id,t1.rtime as current_run_time,(t1.sstime+t1.lstime) as current_stop_time,t2.scode as error_code, t2.duration as stop_time FROM curpord as t1 INNER JOIN curstop as t2 ON t1.mcno = t2.mcno
 
 
 // 
