@@ -14,10 +14,10 @@ const db = mysql.createConnection({
     database: 'lakshmiloom'
 })
 
-db.connect((err) => {
-    if (err) console.log(err)
-    else console.log("Connected To DB")
-})
+// db.connect((err) => {
+//     if (err) console.log(err)
+//     else console.log("Connected To DB")
+// })
 
 let connections = [] //all connection to the websockets are stored in this array
 
@@ -88,7 +88,7 @@ const updateMachineData = async(obj) => {
             const timeDiff = parseInt(obj.latestMachineData[idx].current_stop_time) - parseInt(machineData.current_stop_time)
             console.log(timeDiff, obj.latestMachineData[idx].current_stop_time, machineData.current_stop_time)
             obj.latestMachineData[idx].timestamp = convertDateTimeStringToTime(obj.latestMachineData[idx].timestamp)
-            if (timeDiff >= API_CALL_TIME) {
+            if (timeDiff >= API_CALL_TIME/1000) {
                 //this means machine is down for more than 5 minutes
                 //we need to send a notification to app using websockets
                 sendNotificationForMachine(obj.latestMachineData[idx], 'down') //send notification to app
@@ -112,7 +112,7 @@ const updateMachineData = async(obj) => {
 //calling the updatedata funciton for dataset
 setInterval(() => {
     getDataFromApi()
-    getDataFromSql()
+    // getDataFromSql()
 }, API_CALL_TIME)
 
 
