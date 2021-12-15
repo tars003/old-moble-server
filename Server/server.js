@@ -155,26 +155,40 @@ const getDataFromApi = async() => {
 }
 
 //db query
-const getDataFromSql = () => {
-    db.query(`SELECT ${primarykey} from ${table} ')`, (err, result) => {
+const getDataFromSql = async() => {
+    db.query(`SELECT ${primarykey} from ${table} ')`, async(err, result) => {
         if (err) {
             console.log(err)
             reject('Failed')
         } else {
-            updateMachineData(currentMachineDataSql, downMachinesSql, latestMachineData)
+
+            const timeStamp = new Date(Date.now()).toISOString()
+            result.forEach(data => {
+                data.timeStamp = timeStamp
+                data.efficiency = (Math.round((data.current_run_time / (data.current_run_time+data.current_stop_time))*10000))/100
+            })
+            const latestMachineData = result
+            const obj = {
+                currentMachineData:currentMachineDataSql,
+                downMachines:downMachinesSql,
+                latestMachineData:latestMachineData
+            }
+            await updateMachineData(obj)
+            currentMachineDataSql = obj.currentMachineData
+            downMachinesSql = obj.downMachines
         }
     })
 }
 
-// SELECT t1.mcno as name,t1.rtime as current_run_time,t2.current_stop_time
+// SELECT t1.mcno as name,t1.rtime as current_run_time,(t1.sstime+t1.lstime) as current_stop_time
 // from curprod as t1 INNER JOIN
 // (SELECT id,mcno as name, max(sstime+lstime) as current_stop_time FROM curprod GROUP BY mnco) as t2
-// ON t1.id=t2.id and t1.name=t2.name  //Subquery 1
+// ON t1.current_stop_time=t2.current_stop_time and t1.name=t2.name  //Subquery 1
 
-// SELECT t1.mcno as name,t1.scode as error_code,t2.duration
+// SELECT t1.mcno as name,t1.scode as error_code,t1.duration
 // from curstop as t1 INNER JOIN
-// (SELECT id,mcno as name, max duration FROM curstp GROUP BY mnco) as t2
-// ON t1.id=t2.id and t1.name=t2.name //Subquery 2
+// (SELECT id,mcno as name, max(duration) FROM curstp GROUP BY mnco) as t2
+// ON t1.duration=t2.duration and t1.name=t2.name //Subquery 2
 
 
 // 
