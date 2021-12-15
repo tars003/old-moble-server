@@ -30,9 +30,9 @@ setInterval(() => {
         let random = Math.random()
         if (machine.id === 3) random = 0.9
         if (random > 0.8) {
-            machine.current_stop_time = (parseInt(machine.current_stop_time) + DATA_UPDATE_TIME).toString()
+            machine.current_stop_time = (parseInt(machine.current_stop_time) + (DATA_UPDATE_TIME / 1000)).toString()
         } else {
-            machine.current_run_time = (parseInt(machine.current_run_time) + DATA_UPDATE_TIME).toString()
+            machine.current_run_time = (parseInt(machine.current_run_time) + (DATA_UPDATE_TIME / 1000)).toString()
         }
         machine.timestamp = timestamp
     })
