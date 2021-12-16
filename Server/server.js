@@ -71,7 +71,9 @@ let currentMachineDataApi = []
 let downMachinesApi = {}
 let currentMachineDataSql = []
 let downMachinesSql = {}
-    const API_CALL_TIME = 10000 //in milliseconds
+let timeDiffOfMachine = {}
+const API_CALL_TIME = 10000 //in milliseconds
+const MACHINE_DOWN_TIME = 300 //in seconds
 // const API_CALL_TIME = 150000 //in milliseconds
 
 const updateMachineData = async(obj) => {    
@@ -79,6 +81,7 @@ const updateMachineData = async(obj) => {
     if (obj.currentMachineData.length === 0) {
         obj.latestMachineData.forEach(machineData => {
             machineData.timestamp = convertDateTimeStringToTime(machineData.timestamp)
+            timeDiffOfMachine[machineData.id] = 0
         })
         obj.currentMachineData = obj.latestMachineData
     } else {
@@ -88,7 +91,8 @@ const updateMachineData = async(obj) => {
             const timeDiff = parseInt(obj.latestMachineData[idx].current_stop_time) - parseInt(machineData.current_stop_time)
             console.log(timeDiff, obj.latestMachineData[idx].current_stop_time, machineData.current_stop_time)
             obj.latestMachineData[idx].timestamp = convertDateTimeStringToTime(obj.latestMachineData[idx].timestamp)
-            if (timeDiff >= API_CALL_TIME/1000) {
+            timeDiffOfMachine[machineData.id] += timeDiff
+            if (timeDiffOfMachine[machineData.id] >= MACHINE_DOWN_TIME) {
                 //this means machine is down for more than 5 minutes
                 //we need to send a notification to app using websockets
                 sendNotificationForMachine(obj.latestMachineData[idx], 'down') //send notification to app
@@ -101,6 +105,7 @@ const updateMachineData = async(obj) => {
                 if (obj.downMachines[machineData.id]) {
                     sendNotificationForMachine(obj.latestMachineData[idx], 'functional') //send notification to app
                     obj.downMachines[machineData.id] = null
+                    timeDiffOfMachine[machineData.id] = 0 //updaing time difference of machine to 0
                 }
                 obj.latestMachineData[idx].status = "Functional"
             }
