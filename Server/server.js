@@ -4,6 +4,8 @@ const http = require('http')
 const fetch = require('node-fetch');
 const mysql = require('mysql');
 
+const API_URL = "http://192.168.0.107:81/wmsnew/api"
+
 const app = express()
 const server = http.createServer(app);
 
@@ -153,7 +155,7 @@ const getDataFromApi = async() => {
     //for test purpose we have a local server running at port 1000
     //that will send all data related to machine
     console.log('Fetching New Machine Data')
-    const res = await fetch('http://localhost:1000')
+    const res = await fetch(API_URL)
     const data = await res.json()
     const latestMachineData = data.data
 
