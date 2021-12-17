@@ -82,7 +82,7 @@ const updateMachineData = async(obj) => {
     
     if (obj.currentMachineData.length === 0) {
         obj.latestMachineData.forEach(machineData => {
-            machineData.timestamp = convertDateTimeStringToTime(machineData.timestamp)
+            machineData.time_stamp = convertDateTimeStringToTime(machineData.time_stamp)
             timeDiffOfMachine[machineData.id] = 0
         })
         obj.currentMachineData = obj.latestMachineData
@@ -92,7 +92,7 @@ const updateMachineData = async(obj) => {
         obj.currentMachineData.forEach((machineData, idx) => {
             const timeDiff = parseInt(obj.latestMachineData[idx].current_stop_time) - parseInt(machineData.current_stop_time)
             // console.log(timeDiff, obj.latestMachineData[idx].current_stop_time, machineData.current_stop_time)            
-            obj.latestMachineData[idx].timestamp = convertDateTimeStringToTime(obj.latestMachineData[idx].timestamp)
+            obj.latestMachineData[idx].time_stamp = convertDateTimeStringToTime(obj.latestMachineData[idx].time_stamp)
             if(timeDiff === 0)timeDiffOfMachine[machineData.id] = 0
             timeDiffOfMachine[machineData.id] += timeDiff
             if (timeDiffOfMachine[machineData.id] >= MACHINE_DOWN_TIME) {
@@ -178,12 +178,12 @@ const getDataFromSql = async() => {
         } else {
             let latestMachineData = []
 
-            const timeStamp = new Date(Date.now()).toISOString()
+            const time_stamp = new Date(Date.now()).toISOString()
             result.forEach(data => {
                 data = JSON.stringify(data)
                 data.name = `Machine-${data.id}`
                 data.rpm = '200'
-                data.timeStamp = timeStamp
+                data.time_stamp = time_stamp
                 data.efficiency = (Math.round((data.current_run_time / (data.current_run_time+data.current_stop_time))*10000))/100
                 latestMachineData.push(data)
             })
