@@ -142,11 +142,11 @@ app.get('/data', (req, res) => {
     })
 })
 
-server.listen(5000, (err) => {
+server.listen(5001, (err) => {
     if (err) {
         console.error(err)
     } else {
-        console.log('Server Running at Port 5000')
+        console.log('Server Running at Port 5001')
     }
 })
 
