@@ -157,7 +157,7 @@ const getDataFromApi = async() => {
     console.log('Fetching New Machine Data')
     const res = await fetch(API_URL)
     const data = await res.json()
-    const latestMachineData = data.data
+    const latestMachineData = data
 
     const obj = {
         currentMachineData:currentMachineDataApi,
