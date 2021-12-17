@@ -89,8 +89,9 @@ const updateMachineData = async(obj) => {
         //incoming new data to check if a machine is working or ideal
         obj.currentMachineData.forEach((machineData, idx) => {
             const timeDiff = parseInt(obj.latestMachineData[idx].current_stop_time) - parseInt(machineData.current_stop_time)
-            console.log(timeDiff, obj.latestMachineData[idx].current_stop_time, machineData.current_stop_time)
+            // console.log(timeDiff, obj.latestMachineData[idx].current_stop_time, machineData.current_stop_time)            
             obj.latestMachineData[idx].timestamp = convertDateTimeStringToTime(obj.latestMachineData[idx].timestamp)
+            if(timeDiff === 0)timeDiffOfMachine[machineData.id] = 0
             timeDiffOfMachine[machineData.id] += timeDiff
             if (timeDiffOfMachine[machineData.id] >= MACHINE_DOWN_TIME) {
                 //this means machine is down for more than 5 minutes
@@ -109,9 +110,10 @@ const updateMachineData = async(obj) => {
                 }
                 obj.latestMachineData[idx].status = "Functional"
             }
-        })
+        })        
         obj.currentMachineData = obj.latestMachineData //finally upating machine data with latest data set
     }
+    console.log(timeDiffOfMachine)
 }
 
 //calling the updatedata funciton for dataset
