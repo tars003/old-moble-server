@@ -122,8 +122,10 @@ const updateMachineData = async(obj) => {
                 
             obj.latestMachineData[idx].time_stamp = convertDateTimeStringToTime(obj.latestMachineData[idx].time_stamp)
 
+            obj.latestMachineData[idx].status = machineData.status
+
             if(MACHINE_API_CALL_TIME === 0){
-                obj.latestMachineData[idx].status = machineData.status
+                // obj.latestMachineData[idx].status = machineData.status
             }
 
             else{
