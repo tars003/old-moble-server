@@ -37,7 +37,7 @@ wsServer.on('connection', function connection(ws) {
 })
 
 const sendNotificationForMachine = (machineData, status) => {
-    let description = `${machineData.name} is Down for more than 5 Minutes. Please Fix it.`
+    let description = `${machineData.name} is Down for more than 1 Minute. Please Fix it.`
     let type = 'down'
 
     if (status === 'functional') {
@@ -74,48 +74,88 @@ let downMachinesApi = {}
 let currentMachineDataSql = []
 let downMachinesSql = {}
 let timeDiffOfMachine = {}
-const API_CALL_TIME = 10000 //in milliseconds
-const MACHINE_DOWN_TIME = 300 //in seconds
+const API_CALL_TIME = 1000 //in milliseconds
+const MACHINE_DOWN_TIME = 60 //in seconds
 // const API_CALL_TIME = 150000 //in milliseconds
 
+// const updateMachineData = async(obj) => {
+//     obj.latestMachineData.forEach((machineData, idx) => {
+//         obj.latestMachineData[idx].time_stamp = convertDateTimeStringToTime(obj.latestMachineData[idx].time_stamp)
+        
+//         if (obj.latestMachineData[idx].rpm === 0) {
+//             //this means machine is down for more than 1 minutes
+//             //we need to send a notification to app using websockets
+//             sendNotificationForMachine(obj.latestMachineData[idx], 'down') //send notification to app
+//             obj.latestMachineData[idx].status = "Down"
+//             obj.downMachines[machineData.id] = machineData.id
+//         } else {
+//             //it means our machine is active for last 1 minutes
+//             //we have to check if machine's down notification was send
+//             //our app. If yes then we have to send active notification
+//             if (obj.downMachines[machineData.id]) {
+//                 sendNotificationForMachine(obj.latestMachineData[idx], 'functional') //send notification to app
+//                 obj.downMachines[machineData.id] = null
+//                 // timeDiffOfMachine[machineData.id] = 0 //updaing time difference of machine to 0
+//             }
+//             obj.latestMachineData[idx].status = "Functional"
+//         }        
+//     })        
+//     obj.currentMachineData = obj.latestMachineData //finally upating machine data with latest data set
+// }
 const updateMachineData = async(obj) => {    
     
     if (obj.currentMachineData.length === 0) {
         obj.latestMachineData.forEach(machineData => {
+            machineData.timestamp =  machineData.time_stamp
             machineData.time_stamp = convertDateTimeStringToTime(machineData.time_stamp)
             timeDiffOfMachine[machineData.id] = 0
         })
         obj.currentMachineData = obj.latestMachineData
     } else {
         //looping through currently stored machine and comparing it with
-        //incoming new data to check if a machine is working or ideal
+        //incoming new data to check if a machine is working or down
         obj.currentMachineData.forEach((machineData, idx) => {
-            const timeDiff = parseInt(obj.latestMachineData[idx].current_stop_time) - parseInt(machineData.current_stop_time)
-            // console.log(timeDiff, obj.latestMachineData[idx].current_stop_time, machineData.current_stop_time)            
+
+            const MACHINE_API_CALL_TIME =( new Date(obj.latestMachineData[idx].time_stamp) - new Date(machineData.timestamp))/1000
+
+            obj.latestMachineData[idx].timestamp =  obj.latestMachineData[idx].time_stamp
+                
             obj.latestMachineData[idx].time_stamp = convertDateTimeStringToTime(obj.latestMachineData[idx].time_stamp)
-            if(timeDiff === 0)timeDiffOfMachine[machineData.id] = 0
-            timeDiffOfMachine[machineData.id] += timeDiff
-            if (timeDiffOfMachine[machineData.id] >= MACHINE_DOWN_TIME) {
-                //this means machine is down for more than 5 minutes
-                //we need to send a notification to app using websockets
-                sendNotificationForMachine(obj.latestMachineData[idx], 'down') //send notification to app
-                obj.latestMachineData[idx].status = "Down"
-                obj.downMachines[machineData.id] = machineData.id
-            } else {
-                //it means our machine is active for last 5 minutes
-                //we have to check if machine's down notification was send
-                //our app. If yes then we have to send active notification
-                if (obj.downMachines[machineData.id]) {
-                    sendNotificationForMachine(obj.latestMachineData[idx], 'functional') //send notification to app
-                    obj.downMachines[machineData.id] = null
-                    timeDiffOfMachine[machineData.id] = 0 //updaing time difference of machine to 0
-                }
-                obj.latestMachineData[idx].status = "Functional"
+
+            if(MACHINE_API_CALL_TIME === 0){
+                obj.latestMachineData[idx].status = machineData.status
+            }
+
+            else{
+                const timeDiffDown = parseInt(obj.latestMachineData[idx].current_stop_time) - parseInt(machineData.current_stop_time)
+                const timeDiffUp = parseInt(obj.latestMachineData[idx].current_run_time) - parseInt(machineData.current_run_time)
+                //console.log(timeDiff, obj.latestMachineData[idx].current_stop_time, machineData.current_stop_time)            
+                console.log(obj.latestMachineData[idx].name,timeDiffDown,timeDiffUp,MACHINE_API_CALL_TIME)
+
+                // if(timeDiff === 0)timeDiffOfMachine[machineData.id] = 0
+                // timeDiffOfMachine[machineData.id] += timeDiff
+                if (timeDiffDown >= MACHINE_API_CALL_TIME || timeDiffUp === 0) {
+                    //this means machine is down for more than 1 minutes
+                    //we need to send a notification to app using websockets
+                    sendNotificationForMachine(obj.latestMachineData[idx], 'down') //send notification to app
+                    obj.latestMachineData[idx].status = "Down"
+                    obj.downMachines[machineData.id] = machineData.id
+                } else if(timeDiffUp >= MACHINE_API_CALL_TIME && timeDiffDown === 0){
+                    //it means our machine is active for last 1 minutes
+                    //we have to check if machine's down notification was send
+                    //our app. If yes then we have to send active notification
+                    if (obj.downMachines[machineData.id]) {
+                        sendNotificationForMachine(obj.latestMachineData[idx], 'functional') //send notification to app
+                        obj.downMachines[machineData.id] = null
+                        // timeDiffOfMachine[machineData.id] = 0 //updaing time difference of machine to 0
+                    }
+                    obj.latestMachineData[idx].status = "Functional"                    
+                }                
             }
         })        
         obj.currentMachineData = obj.latestMachineData //finally upating machine data with latest data set
     }
-    console.log(timeDiffOfMachine)
+    //console.log(timeDiffOfMachine)
 }
 
 //calling the updatedata funciton for dataset
