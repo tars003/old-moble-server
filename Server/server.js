@@ -4,6 +4,7 @@ const http = require('http')
 const fetch = require('node-fetch');
 const mysql = require('mysql');
 
+// const API_URL = "http://localhost:1000"
 const API_URL = "http://192.168.0.107:81/wmsnew/api"
 
 const app = express()
@@ -37,7 +38,7 @@ wsServer.on('connection', function connection(ws) {
 })
 
 const sendNotificationForMachine = (machineData, status) => {
-    let description = `${machineData.name} is Down for more than 1 Minute. Please Fix it.`
+    let description = `${machineData.name} is Down. Please Fix it.`
     let type = 'down'
 
     if (status === 'functional') {
@@ -76,32 +77,8 @@ let downMachinesSql = {}
 let timeDiffOfMachine = {}
 const API_CALL_TIME = 1000 //in milliseconds
 const MACHINE_DOWN_TIME = 60 //in seconds
-// const API_CALL_TIME = 150000 //in milliseconds
 
-// const updateMachineData = async(obj) => {
-//     obj.latestMachineData.forEach((machineData, idx) => {
-//         obj.latestMachineData[idx].time_stamp = convertDateTimeStringToTime(obj.latestMachineData[idx].time_stamp)
-        
-//         if (obj.latestMachineData[idx].rpm === 0) {
-//             //this means machine is down for more than 1 minutes
-//             //we need to send a notification to app using websockets
-//             sendNotificationForMachine(obj.latestMachineData[idx], 'down') //send notification to app
-//             obj.latestMachineData[idx].status = "Down"
-//             obj.downMachines[machineData.id] = machineData.id
-//         } else {
-//             //it means our machine is active for last 1 minutes
-//             //we have to check if machine's down notification was send
-//             //our app. If yes then we have to send active notification
-//             if (obj.downMachines[machineData.id]) {
-//                 sendNotificationForMachine(obj.latestMachineData[idx], 'functional') //send notification to app
-//                 obj.downMachines[machineData.id] = null
-//                 // timeDiffOfMachine[machineData.id] = 0 //updaing time difference of machine to 0
-//             }
-//             obj.latestMachineData[idx].status = "Functional"
-//         }        
-//     })        
-//     obj.currentMachineData = obj.latestMachineData //finally upating machine data with latest data set
-// }
+
 const updateMachineData = async(obj) => {    
     
     if (obj.currentMachineData.length === 0) {
@@ -117,39 +94,35 @@ const updateMachineData = async(obj) => {
         obj.currentMachineData.forEach((machineData, idx) => {
 
             const MACHINE_API_CALL_TIME =( new Date(obj.latestMachineData[idx].time_stamp) - new Date(machineData.timestamp))/1000
-
-            obj.latestMachineData[idx].timestamp =  obj.latestMachineData[idx].time_stamp
-                
+            obj.latestMachineData[idx].timestamp =  obj.latestMachineData[idx].time_stamp                
             obj.latestMachineData[idx].time_stamp = convertDateTimeStringToTime(obj.latestMachineData[idx].time_stamp)
-
             obj.latestMachineData[idx].status = machineData.status
 
             if(MACHINE_API_CALL_TIME === 0){
-                // obj.latestMachineData[idx].status = machineData.status
+                // do nothing
             }
 
             else{
                 const timeDiffDown = parseInt(obj.latestMachineData[idx].current_stop_time) - parseInt(machineData.current_stop_time)
                 const timeDiffUp = parseInt(obj.latestMachineData[idx].current_run_time) - parseInt(machineData.current_run_time)
-                //console.log(timeDiff, obj.latestMachineData[idx].current_stop_time, machineData.current_stop_time)            
-                console.log(obj.latestMachineData[idx].name,timeDiffDown,timeDiffUp,MACHINE_API_CALL_TIME)
 
-                // if(timeDiff === 0)timeDiffOfMachine[machineData.id] = 0
-                // timeDiffOfMachine[machineData.id] += timeDiff
+                console.log(obj.latestMachineData[idx].name,timeDiffDown,timeDiffUp,MACHINE_API_CALL_TIME)
+                
                 if (timeDiffDown >= MACHINE_API_CALL_TIME || timeDiffUp === 0) {
-                    //this means machine is down for more than 1 minutes
+                    //this means machine is down 
                     //we need to send a notification to app using websockets
-                    sendNotificationForMachine(obj.latestMachineData[idx], 'down') //send notification to app
-                    obj.latestMachineData[idx].status = "Down"
-                    obj.downMachines[machineData.id] = machineData.id
+                    if (!obj.downMachines[machineData.id]) {
+                        sendNotificationForMachine(obj.latestMachineData[idx], 'down') //send notification to app
+                        obj.latestMachineData[idx].status = "Down"
+                        obj.downMachines[machineData.id] = machineData.id
+                    }  
                 } else if(timeDiffUp >= MACHINE_API_CALL_TIME && timeDiffDown === 0){
-                    //it means our machine is active for last 1 minutes
+                    //it means our machine is active
                     //we have to check if machine's down notification was send
                     //our app. If yes then we have to send active notification
                     if (obj.downMachines[machineData.id]) {
                         sendNotificationForMachine(obj.latestMachineData[idx], 'functional') //send notification to app
                         obj.downMachines[machineData.id] = null
-                        // timeDiffOfMachine[machineData.id] = 0 //updaing time difference of machine to 0
                     }
                     obj.latestMachineData[idx].status = "Functional"                    
                 }                
@@ -157,7 +130,6 @@ const updateMachineData = async(obj) => {
         })        
         obj.currentMachineData = obj.latestMachineData //finally upating machine data with latest data set
     }
-    //console.log(timeDiffOfMachine)
 }
 
 //calling the updatedata funciton for dataset
@@ -199,7 +171,8 @@ const getDataFromApi = async() => {
     console.log('Fetching New Machine Data')
     const res = await fetch(API_URL)
     const data = await res.json()
-    const latestMachineData = data
+    const latestMachineData = data.data
+    // const latestMachineData = data
 
     const obj = {
         currentMachineData:currentMachineDataApi,
